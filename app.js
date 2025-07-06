@@ -8,7 +8,7 @@ const YAML = require('yamljs');
 const swaggerDocument = YAML.load('./docs/swagger.yaml');
 
 app.use(bodyParser.json());
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use('/adoptionRequest-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use('/', routes);
 
 module.exports = app;

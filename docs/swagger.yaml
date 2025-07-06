@@ -1,31 +1,269 @@
 openapi: 3.0.0
 info:
-  title: Adoption Request API
-  version: "1.0"
+  title: Adoption Request Service API
+  version: 1.0.0
+  description: >
+    This API provides adoption request management functionality for the Shaggy Mission pet adoption system.
+    The service enables potential adopters to submit adoption requests for specific pets, validates pet
+    availability through integration with the Pet Service, and manages the request lifecycle with status
+    tracking. This service is designed to facilitate connections between loving families and pets in need
+    of forever homes, ensuring a smooth and organized adoption process.
+
+
 paths:
   /adoption-requests:
     post:
-      summary: Create an adoption request
+      summary: Create a new adoption request
+      description: >
+        Creates a new adoption request for a specific pet. This endpoint validates the request data,
+        verifies pet availability through the Pet Service, and stores the request with a pending status.
+      tags:
+        - Adoption Requests
       requestBody:
         required: true
+        description: >
+          Adoption request data including user ID, pet ID, and optional personal message.
+          Both userId and petId are required for processing the request.
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - userId
-                - petId
-              properties:
-                userId:
-                  type: string
-                petId:
-                  type: string
-                message:
-                  type: string
+              $ref: '#/components/schemas/AdoptionRequestInput'
+            examples:
+              basic_request:
+                summary: Basic adoption request
+                description: Minimal request with required fields only
+                value:
+                  userId: "user123"
+                  petId: "64f8b2a1c3d4e5f6a7b8c9d0"
+              detailed_request:
+                summary: Detailed adoption request with message
+                description: Complete request with personal message from adopter
+                value:
+                  userId: "user456"
+                  petId: "64f8b2a1c3d4e5f6a7b8c9d1"
+                  message: "I would love to provide a loving home for this pet. I have experience with dogs and a large backyard perfect for an active pet."
+              family_request:
+                summary: Family adoption request
+                description: Request from a family with specific circumstances
+                value:
+                  userId: "family789"
+                  petId: "64f8b2a1c3d4e5f6a7b8c9d2"
+                  message: "Our family has been looking for a companion for our children. We have a safe, loving home and are committed to providing excellent care."
       responses:
         '201':
-          description: Request created
+          description: Adoption request created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdoptionRequest'
+              examples:
+                successful_request:
+                  summary: Successfully created adoption request
+                  value:
+                    _id: "64f8b2a1c3d4e5f6a7b8c9d3"
+                    userId: "user123"
+                    petId: "64f8b2a1c3d4e5f6a7b8c9d0"
+                    message: "I would love to provide a loving home for this pet. I have experience with dogs and a large backyard."
+                    status: "pending"
+                    dateRequested: "2024-01-15T10:30:00.000Z"
+                request_without_message:
+                  summary: Request created without message
+                  value:
+                    _id: "64f8b2a1c3d4e5f6a7b8c9d4"
+                    userId: "user456"
+                    petId: "64f8b2a1c3d4e5f6a7b8c9d1"
+                    status: "pending"
+                    dateRequested: "2024-01-15T11:15:00.000Z"
         '400':
-          description: Missing data
+          description: Bad Request – Missing required fields or pet not available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missing_fields:
+                  summary: Missing required fields
+                  description: When userId or petId is not provided
+                  value:
+                    message: "userId and petId are required"
+                pet_not_available:
+                  summary: Pet not available for adoption
+                  description: When the requested pet is not available
+                  value:
+                    message: "Pet is not available for adoption"
+                invalid_user_id:
+                  summary: Invalid user ID format
+                  description: When userId format is invalid
+                  value:
+                    message: "userId and petId are required"
+                invalid_pet_id:
+                  summary: Invalid pet ID format
+                  description: When petId format is invalid
+                  value:
+                    message: "userId and petId are required"
         '500':
-          description: Internal server error
+          description: Internal Server Error – Database or external service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                database_error:
+                  summary: Database connection error
+                  description: When database is unavailable
+                  value:
+                    message: "Internal server error"
+                pet_service_error:
+                  summary: Pet Service unavailable
+                  description: When Pet Service cannot be reached
+                  value:
+                    message: "Internal server error"
+                general_error:
+                  summary: General server error
+                  description: Unexpected server error
+                  value:
+                    message: "Internal server error"
+
+components:
+  schemas:
+    AdoptionRequestInput:
+      type: object
+      properties:
+        userId:
+          type: string
+          description: Unique identifier for the user making the adoption request
+          example: "user123"
+          minLength: 1
+          maxLength: 100
+        petId:
+          type: string
+          description: Unique identifier for the pet being requested for adoption
+          example: "64f8b2a1c3d4e5f6a7b8c9d0"
+          pattern: '^[0-9a-fA-F]{24}$'
+        message:
+          type: string
+          description: Optional personal message from the adopter explaining their interest
+          example: "I would love to provide a loving home for this pet. I have experience with dogs and a large backyard."
+          maxLength: 1000
+          nullable: true
+      required:
+        - userId
+        - petId
+      description: Input data required to create an adoption request
+
+    AdoptionRequest:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Unique MongoDB ObjectId for the adoption request
+          example: "64f8b2a1c3d4e5f6a7b8c9d3"
+          pattern: '^[0-9a-fA-F]{24}$'
+        userId:
+          type: string
+          description: Unique identifier for the user who made the request
+          example: "user123"
+        petId:
+          type: string
+          description: Unique identifier for the requested pet
+          example: "64f8b2a1c3d4e5f6a7b8c9d0"
+          pattern: '^[0-9a-fA-F]{24}$'
+        message:
+          type: string
+          description: Personal message from the adopter
+          example: "I would love to provide a loving home for this pet. I have experience with dogs and a large backyard."
+          nullable: true
+        status:
+          type: string
+          description: Current status of the adoption request
+          enum: ["pending", "approved", "rejected"]
+          example: "pending"
+          default: "pending"
+        dateRequested:
+          type: string
+          format: date-time
+          description: Timestamp when the adoption request was submitted
+          example: "2024-01-15T10:30:00.000Z"
+      required:
+        - _id
+        - userId
+        - petId
+        - status
+        - dateRequested
+      description: Complete adoption request record with all information
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message describing what went wrong
+          example: "userId and petId are required"
+        error:
+          type: string
+          description: Additional error details (optional)
+          example: "Database connection failed"
+          nullable: true
+      required:
+        - message
+      description: Standard error response format for API errors
+
+    AdoptionRequestStatus:
+      type: string
+      enum: ["pending", "approved", "rejected"]
+      description: >
+        Possible statuses for an adoption request:
+        - **pending**: Request has been submitted and awaits review
+        - **approved**: Request has been approved by staff/admin
+        - **rejected**: Request has been declined or pet is no longer available
+      example: "pending"
+
+  parameters:
+    UserIdParam:
+      name: userId
+      in: path
+      required: true
+      description: Unique identifier for the user
+      schema:
+        type: string
+        example: "user123"
+
+    PetIdParam:
+      name: petId
+      in: path
+      required: true
+      description: Unique identifier for the pet
+      schema:
+        type: string
+        pattern: '^[0-9a-fA-F]{24}$'
+        example: "64f8b2a1c3d4e5f6a7b8c9d0"
+
+    StatusParam:
+      name: status
+      in: query
+      required: false
+      description: Filter adoption requests by status
+      schema:
+        $ref: '#/components/schemas/AdoptionRequestStatus'
+
+  examples:
+    AdoptionRequestExample:
+      summary: Complete adoption request example
+      value:
+        _id: "64f8b2a1c3d4e5f6a7b8c9d3"
+        userId: "user123"
+        petId: "64f8b2a1c3d4e5f6a7b8c9d0"
+        message: "I would love to provide a loving home for this pet. I have experience with dogs and a large backyard."
+        status: "pending"
+        dateRequested: "2024-01-15T10:30:00.000Z"
+
+    AdoptionRequestInputExample:
+      summary: Adoption request input example
+      value:
+        userId: "user123"
+        petId: "64f8b2a1c3d4e5f6a7b8c9d0"
+        message: "I would love to provide a loving home for this pet. I have experience with dogs and a large backyard."
+
+tags:
+  - name: Adoption Requests
+    description: Operations for managing pet adoption requests
