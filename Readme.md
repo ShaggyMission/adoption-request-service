@@ -200,7 +200,6 @@ curl -X POST "http://localhost:3015/adoption-requests" \
     "message": "I would love to adopt this pet!"
   }'
 
-# Expected response includes request details with pending status
 ```
 
 ### Common Usage Scenarios
@@ -209,8 +208,6 @@ curl -X POST "http://localhost:3015/adoption-requests" \
 - **Status Tracking**: Monitor request status and approval workflow
 - **Communication**: Include personal messages with adoption requests
 - **Integration**: Connect with Pet Service for availability verification
-
-
 
 ### Service Dependencies
 - **Pet Service**: Required for pet availability verification
